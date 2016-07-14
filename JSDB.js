@@ -211,4 +211,10 @@ db.getTable("test1").all();
 db.getTable("test1").all()[0].get();
 Object {a: 1, __id: 0}
  
+ 
+ or 
+ 
+ 
+ JSDB.load({ database: { tables: { "table1": [ {row: 1}, {row: 2}, {row: 3} ], "table2": [ {a:1}, {b:2}, {c:3} ] }, description: "test" } })
+ 
  **/
