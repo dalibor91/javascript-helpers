@@ -11,6 +11,14 @@ var JSDB = function() {
         this.get = function (name) {
             return data[name] ? data[name] : null;
         };
+        
+        this.tables = function() {
+            tables = [];
+            for (var i in data) {
+                tables.push(i);
+            }
+            return tables;
+        }
     };
 
     var _DataRow = function(d) {
@@ -60,7 +68,7 @@ var JSDB = function() {
 
         this.insert = function(k) {
             if (typeof k == 'object'){
-                k["__id"] = data.length;
+                k["__index"] = data.length;
                 var s = new _DataRow(k);
                 data.push(s)
                 onInsert(s);
@@ -120,7 +128,8 @@ var JSDB = function() {
     };
 
     var db = {
-        db: new _Database()
+        db: new _Database(),
+        desc: null
     }
 
     this.getTable = function (name) {
@@ -130,7 +139,46 @@ var JSDB = function() {
     this.addTable = function (name) {
         return db.db.add(name, new _DataTable());
     };
+    
+    this.tables = function() {
+        return db.db.tables();
+    };
+    
+    this.setDescription = function(desc) {
+        db.desc = desc;
+        return this;
+    };
+    
+    this.getDescription = function() {
+        return db.desc;
+    };
 };
+
+JSDB.load = function(data) {
+    
+    if (typeof data.database != 'undefined') {
+        
+        var db = new JSDB();
+        
+        if (typeof data.database.tables != 'undefined') {
+            for (var i in data.database.tables) {
+                db.addTable(i);
+                
+                for (var j in data.database.tables[i]) {
+                    db.getTable(i).insert(data.database.tables[i][j]);
+                }
+            }
+        }
+        
+        if (typeof data.database.description != 'undefined') {
+            db.setDescription(data.database.description);
+        }
+        
+        return db;
+    }
+ 
+    return null;
+}; 
 
 
 /*
