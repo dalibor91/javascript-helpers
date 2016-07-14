@@ -114,8 +114,8 @@ var JSDB = function() {
             }
         };
 
-        this.triggerUpdate = function() {
-            updated(data);
+        this.triggerUpdate = function(id) {
+            id ? updated(data) : updated(data[id]);
         };
     };
 
