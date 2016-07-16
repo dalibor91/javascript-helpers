@@ -1,5 +1,5 @@
 var JSDB = function() {
-        
+
     var _Database = function() {
         var data = {};
 
@@ -11,13 +11,33 @@ var JSDB = function() {
         this.get = function (name) {
             return data[name] ? data[name] : null;
         };
-        
+
         this.tables = function() {
             tables = [];
             for (var i in data) {
                 tables.push(i);
             }
             return tables;
+        };
+
+        this.dump = function() {
+          var e = {
+            tables: {}
+          };
+          for (var i in data) {
+            e.tables[i] = [];
+            for (var j in data[i].all()) {
+              var tmpdata = {},
+                  actdata = data[i].row(j).get();
+              for (var k in actdata) {
+                if (k !== "__index") {
+                  tmpdata[k] = actdata[k];
+                }
+              }
+              e.tables[i].push(tmpdata);
+            }
+          }
+          return e;
         }
     };
 
@@ -40,7 +60,7 @@ var JSDB = function() {
         };
 
         this.sameAS = function(name, value, strict) {
-            return strict ? (this.has(name) && data[name] == value) : 
+            return strict ? (this.has(name) && data[name] == value) :
                     (this.has(name) && data[name] === value);
         };
 
@@ -61,7 +81,7 @@ var JSDB = function() {
 
     var _DataTable = function() {
 
-        var data = [], 
+        var data = [],
             onInsert = function() {},
             onDelete = function() {},
             updated = function() {};
@@ -92,6 +112,20 @@ var JSDB = function() {
 
         this.all = function() {
             return data;
+        };
+
+        this.extract = function(name) {
+            e = [];
+            for (var i in data) {
+              if (data[i].has(name)) {
+                e.push(data[i].get(name));
+              }
+            }
+            return e;
+        };
+
+        this.row = function(index) {
+          return typeof data[index] !== 'undefined' ? data[index] : null;
         };
 
         this.onInsert = function(callback) {
@@ -135,50 +169,63 @@ var JSDB = function() {
     this.getTable = function (name) {
         return db.db.get(name);
     };
-    
+
     this.addTable = function (name) {
         return db.db.add(name, new _DataTable());
     };
-    
+
     this.tables = function() {
         return db.db.tables();
     };
-    
+
     this.setDescription = function(desc) {
         db.desc = desc;
         return this;
     };
-    
+
     this.getDescription = function() {
         return db.desc;
+    };
+
+    this.dump = function() {
+      var ex = {};
+      for (var i in db) {
+        if (i == 'db') {
+          ex['database'] = db[i].dump();
+        } else {
+          ex[i] = db[i];
+        }
+      }
+      return JSON.stringify(ex, null, 2);
     };
 };
 
 JSDB.load = function(data) {
-    
+
     if (typeof data.database != 'undefined') {
-        
+
         var db = new JSDB();
-        
+
         if (typeof data.database.tables != 'undefined') {
             for (var i in data.database.tables) {
                 db.addTable(i);
-                
+
                 for (var j in data.database.tables[i]) {
                     db.getTable(i).insert(data.database.tables[i][j]);
                 }
             }
         }
-        
+
         if (typeof data.database.description != 'undefined') {
             db.setDescription(data.database.description);
         }
-        
+
         return db;
     }
- 
+
     return null;
-}; 
+};
+
 
 
 /*
