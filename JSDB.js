@@ -4,16 +4,21 @@ var JSDB = function() {
 	tableNameField = "$_tableName_$",
 	_OnRowUpdate = function() {},
 	_OnRowInsert = function() {},
-       	_OnRowDelete = function() {};
+        _OnRowDelete = function() {}, 
+        _OnTableAdd	 = function() {};
 
+    //database 
     var _Database = function() {
         var data = {};
 
+        //adds table to database 
         this.add = function(name, val) {
             data[name] = val;
+            _OnTableAdd(data[name]);
             return this;
         };
 
+        //checks does database have some tables 
         this.isEmpty = function() {
         	for (var i in data) {
         		return false;
@@ -21,10 +26,12 @@ var JSDB = function() {
         	return true;
         };
 
+        //gets table by name 
         this.get = function (name) {
             return data[name] ? data[name] : null;
         };
 
+        //gets array with table names 
         this.tables = function() {
             tables = [];
             for (var i in data) {
@@ -33,14 +40,7 @@ var JSDB = function() {
             return tables;
         };
 
-        this.index = function() {
-        	return this.get(indexField);
-        };
-
-        this.tableName = function() {
-        	return this.get(tableNameField);
-        };
-
+        //dumps database as json
         this.dump = function() {
           var e = {
             tables: {}
@@ -62,29 +62,45 @@ var JSDB = function() {
         }
     };
 
+    //row in table 
     var _DataRow = function(d) {
         var data = d || {};
 
+        //sets field to some value 
         this.set = function(name, val) {
             data[name] = val;
             _OnRowUpdate(data);
             return this;
         };
 
+        //gets value for some field 
         this.get = function(name) {
             return typeof data[name] !== 'undefined' ? data[name] : data;
         };
 
+        //checks do we have field with this name 
         this.has = function(name) {
             return typeof data[name] !== 'undefined';
         };
 
+        //checks field with "name" against "value", "strict" if true we use === else ==
         this.sameAs = function(name, value, strict) {
             return strict ? (this.has(name) && data[name] == value) :
                     (this.has(name) && data[name] === value);
         };
+
+        //get index of row 
+        this.index = function() {
+        	return this.get(indexField);
+        };
+
+        //get table name 
+        this.tableName = function() {
+        	return this.get(tableNameField);
+        };
     };
 
+    //table 
     var _DataTable = function(name) {
 
         var data = [],
@@ -92,6 +108,7 @@ var JSDB = function() {
             onDelete = _OnRowDelete, 
             tableName = name;
 
+        //adds row to table
         this.insert = function(k) {
             if (typeof k == 'object'){
                 k[indexField] = data.length;
@@ -103,6 +120,7 @@ var JSDB = function() {
             return this;
         };
 
+        //deletes row from table
         this.delete = function(index) {
             var row = data[index];
             data.splice(index, 1);
@@ -110,6 +128,7 @@ var JSDB = function() {
             return this;
         };
 
+        //returns row where field "name" is "val"
         this.find = function(name, val) {
             for (var i in data) {
               var equals = true;
@@ -122,10 +141,12 @@ var JSDB = function() {
             }
         };
 
+        //checks if data is empty
         this.isEmpty = function() {
         	return data.length == 0;
         };
 
+        //returns all rows that match "obj"
         this.findAll = function(obj) {
           var d = []
           for (var i in data) {
@@ -140,10 +161,12 @@ var JSDB = function() {
           return d;
         };
 
+        //returns all rows
         this.all = function() {
             return data;
         };
 
+        //returns array with extracted field from table
         this.extract = function(name) {
             e = [];
             for (var i in data) {
@@ -154,20 +177,24 @@ var JSDB = function() {
             return e;
         };
 
+        //returns row on index
         this.row = function(index) {
           return typeof data[index] !== 'undefined' ? data[index] : null;
         };
 
+        //returns size
         this.count = function() {
           return data.length;
         };
 
+        //truncates table
         this.truncate = function() {
             if (data.length > 0) {
                 data = [];
             }
         };
 
+        //returns table name 
         this.getTableName = function() {
         	return tableName;
         } 
@@ -258,3 +285,16 @@ JSDB.load = function(data) {
 
     return null;
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
