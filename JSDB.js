@@ -1,10 +1,10 @@
 var JSDB = function() {
 
 	var indexField = "$_index_$",
-		tableNameField = "$_tableName_$",
-		_OnRowUpdate = function() {},
-		_OnRowInsert = function() {},
-        _OnRowDelete = function() {};
+	tableNameField = "$_tableName_$",
+	_OnRowUpdate = function() {},
+	_OnRowInsert = function() {},
+       	_OnRowDelete = function() {};
 
     var _Database = function() {
         var data = {};
@@ -258,44 +258,3 @@ JSDB.load = function(data) {
 
     return null;
 };
-
-
-
-
-/*
- * 
-
- var db = new JSDB();
-undefined
-db.addTable("test1");
-_Database {}
-db.addTable("test2");
-_Database {}
-db.getTable("test1").insert({ a: 1 })
-_DataTable {}
-db.getTable("test1").insert({ a: 2 })
-_DataTable {}
-db.getTable("test1").insert({ a: 3 })
-_DataTable {}
-db.getTable("test1").insert({ a: 4 })
-_DataTable {}
-db.getTable("test2").insert({ a: 45 })
-_DataTable {}
-db.getTable("test2").insert({ a: 465 })
-_DataTable {}
-db.getTable("test2").insert({ a: 4657 })
-_DataTable {}
-db.getTable("test2")
-_DataTable {}all: ()delete: (index)find: (name, val)insert: (k)onDelete: (callback)onInsert: (callback)onUpdate: (callback)triggerUpdate: ()truncate: ()__proto__: Object
-db.getTable("test1").all();
-[_DataRow, _DataRow, _DataRow, _DataRow]
-db.getTable("test1").all()[0].get();
-Object {a: 1, __id: 0}
- 
- 
- or 
- 
- 
- JSDB.load({ database: { tables: { "table1": [ {row: 1}, {row: 2}, {row: 3} ], "table2": [ {a:1}, {b:2}, {c:3} ] }, description: "test" } })
- 
- **/
