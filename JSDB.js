@@ -1,11 +1,24 @@
 var JSDB = function() {
 
+	var indexField = "$_index_$",
+		tableNameField = "$_tableName_$",
+		_OnRowUpdate = function() {},
+		_OnRowInsert = function() {},
+        _OnRowDelete = function() {};
+
     var _Database = function() {
         var data = {};
 
         this.add = function(name, val) {
             data[name] = val;
             return this;
+        };
+
+        this.isEmpty = function() {
+        	for (var i in data) {
+        		return false;
+        	}
+        	return true;
         };
 
         this.get = function (name) {
@@ -20,6 +33,14 @@ var JSDB = function() {
             return tables;
         };
 
+        this.index = function() {
+        	return this.get(indexField);
+        };
+
+        this.tableName = function() {
+        	return this.get(tableNameField);
+        };
+
         this.dump = function() {
           var e = {
             tables: {}
@@ -30,7 +51,7 @@ var JSDB = function() {
               var tmpdata = {},
                   actdata = data[i].row(j).get();
               for (var k in actdata) {
-                if (k !== "__index") {
+                if (k !== indexField && k !== tableNameField) {
                   tmpdata[k] = actdata[k];
                 }
               }
@@ -42,72 +63,81 @@ var JSDB = function() {
     };
 
     var _DataRow = function(d) {
-        var data = d || {},
-            updateCallback = function() {   };
+        var data = d || {};
 
         this.set = function(name, val) {
             data[name] = val;
-            updateCallback(data);
+            _OnRowUpdate(data);
             return this;
         };
 
         this.get = function(name) {
-            return data[name] ? data[name] : data;
+            return typeof data[name] !== 'undefined' ? data[name] : data;
         };
 
         this.has = function(name) {
             return typeof data[name] !== 'undefined';
         };
 
-        this.sameAS = function(name, value, strict) {
+        this.sameAs = function(name, value, strict) {
             return strict ? (this.has(name) && data[name] == value) :
                     (this.has(name) && data[name] === value);
         };
-
-        this.onUpdate = function(callback) {
-            if (typeof callback == 'function') {
-                updateCallback = callback;
-            }
-            return this;
-        };
-
-        this.commit = function(callback) {
-            if (typeof callback === 'function') {
-                callback(data);
-            }
-            return this;
-        };
     };
 
-    var _DataTable = function() {
+    var _DataTable = function(name) {
 
         var data = [],
-            onInsert = function() {},
-            onDelete = function() {},
-            updated = function() {};
+            onInsert = _OnRowInsert,
+            onDelete = _OnRowDelete, 
+            tableName = name;
 
         this.insert = function(k) {
             if (typeof k == 'object'){
-                k["__index"] = data.length;
+                k[indexField] = data.length;
+                k[tableNameField] = tableName;
                 var s = new _DataRow(k);
                 data.push(s)
-                onInsert(s);
+                _OnRowInsert(s);
             }
             return this;
         };
 
         this.delete = function(index) {
-            onDelete(data[index]);
-            data.splice(index, 0);
+            var row = data[index];
+            data.splice(index, 1);
+            _OnRowDelete(row);
             return this;
         };
 
         this.find = function(name, val) {
             for (var i in data) {
-                if (data[i].sameAs(name, val)) {
-                    return data[i];
-                }
+              var equals = true;
+              for(var j in obj) {
+                equals = equls && data[i].sameAs(j, obj[j])
+              }
+              if (equals) {
+                return data[i];
+              }
             }
+        };
+
+        this.isEmpty = function() {
+        	return data.length == 0;
+        };
+
+        this.findAll = function(obj) {
+          var d = []
+          for (var i in data) {
+            var equals = true;
+            for(var j in obj) {
+              equals = equals && data[i].sameAs(j, obj[j])
+            }
+            if (equals) {
+              d.push(data[i]);
+            }
+          }
+          return d;
         };
 
         this.all = function() {
@@ -128,50 +158,27 @@ var JSDB = function() {
           return typeof data[index] !== 'undefined' ? data[index] : null;
         };
 
-        this.onInsert = function(callback) {
-            if (typeof callback == 'function') {
-                onInsert = callback;
-            }
-            return this;
-        };
-
-        this.onDelete = function(callback) {
-            if (typeof callback == 'function') {
-                onDelete = callback;
-            }
-            return this;
-        };
-
-        this.onUpdate = function(callback) {
-            if (typeof callback == 'function') {
-                updated = callback;
-            }
-            return this;
+        this.count = function() {
+          return data.length;
         };
 
         this.truncate = function() {
             if (data.length > 0) {
                 data = [];
-                this.triggerUpdate();
             }
         };
 
-        this.triggerUpdate = function(id) {
-            id ? updated(data) : updated(data[id]);
-        };
+        this.getTableName = function() {
+        	return tableName;
+        } 
     };
-
-    var db = {
-        db: new _Database(),
-        desc: null
-    }
 
     this.getTable = function (name) {
         return db.db.get(name);
     };
 
     this.addTable = function (name) {
-        return db.db.add(name, new _DataTable());
+        return db.db.add(name, new _DataTable(name));
     };
 
     this.tables = function() {
@@ -187,6 +194,27 @@ var JSDB = function() {
         return db.desc;
     };
 
+    this.onRowUpdate = function(callback) {
+      if (typeof callback == 'function') {
+        _OnRowUpdate = callback;
+      }
+      return this;
+    };
+
+    this.onRowDelete = function(callback) {
+      if (typeof callback == 'function') {
+        _OnRowDelete = callback;
+      }
+      return this;
+    };
+
+    this.onRowInsert = function(callback) {
+      if (typeof callback == 'function') {
+        _OnRowInsert = callback;
+      }
+      return this;
+    };
+
     this.dump = function() {
       var ex = {};
       for (var i in db) {
@@ -198,13 +226,18 @@ var JSDB = function() {
       }
       return JSON.stringify(ex, null, 2);
     };
+
+    var db = {
+        db: new _Database(),
+        desc: null
+    };
 };
 
 JSDB.load = function(data) {
 
     if (typeof data.database != 'undefined') {
 
-        var db = new JSDB();
+    	var db = new JSDB();
 
         if (typeof data.database.tables != 'undefined') {
             for (var i in data.database.tables) {
@@ -216,8 +249,8 @@ JSDB.load = function(data) {
             }
         }
 
-        if (typeof data.database.description != 'undefined') {
-            db.setDescription(data.database.description);
+        if (typeof data.desc != 'undefined') {
+            db.setDescription(data.desc);
         }
 
         return db;
@@ -225,6 +258,7 @@ JSDB.load = function(data) {
 
     return null;
 };
+
 
 
 
