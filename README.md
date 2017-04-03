@@ -23,6 +23,7 @@ db.getTable('test').findAll({ a: 1 }); //will return 2 rows
 
 var idx = db.getTable('test').findAll({ a: 1 })[0].index();
 db.getTable('test').row(idx).set('b', 0.0003);
+db.getTable('test').findAll({ b: 0.0003 });  //this will return one row 
 
 ```
 
